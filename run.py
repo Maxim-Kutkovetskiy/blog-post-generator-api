@@ -1,55 +1,39 @@
 """
-Скрипт запуска для Koyeb.
+Скрипт запуска для Koyeb - БЕЗ условия if __name__
 """
 import os
 import sys
 
-# Добавляем логи сразу
-print("=" * 50)
-print("🚀 run.py запущен!")
-print(f"📍 Python: {sys.version}")
-print(f"📍 Рабочая директория: {os.getcwd()}")
-print(f"📍 Файлы: {os.listdir('.')}")
-print(f"📍 PORT из окружения: {os.environ.get('PORT', 'НЕ УСТАНОВЛЕН')}")
-print("=" * 50)
+# Отключаем буферизацию вывода
+sys.stdout.reconfigure(line_buffering=True)
 
-# Проверяем что app.py существует
-if not os.path.exists('app.py'):
-    print("❌ ОШИБКА: app.py не найден!")
-    sys.exit(1)
+print("=" * 50, flush=True)
+print("🚀 RUN.PY ЗАПУЩЕН!", flush=True)
+print(f"📍 Python: {sys.version}", flush=True)
+print(f"📍 CWD: {os.getcwd()}", flush=True)
+print(f"📍 PORT: {os.environ.get('PORT', 'NOT SET')}", flush=True)
+print(f"📍 OPENAI_API_KEY: {'SET' if os.environ.get('OPENAI_API_KEY') else 'NOT SET'}", flush=True)
+print(f"📍 CURRENTS_API_KEY: {'SET' if os.environ.get('CURRENTS_API_KEY') else 'NOT SET'}", flush=True)
+print("=" * 50, flush=True)
 
-# Импортируем uvicorn
-try:
-    import uvicorn
-    print("✅ uvicorn импортирован")
-except ImportError as e:
-    print(f"❌ ОШИБКА импорта uvicorn: {e}")
-    sys.exit(1)
+# Импорт uvicorn
+print("📦 Импортируем uvicorn...", flush=True)
+import uvicorn
+print("✅ uvicorn импортирован", flush=True)
 
-# Проверяем что app импортируется
-try:
-    from app import app
-    print("✅ app.app импортирован")
-except Exception as e:
-    print(f"❌ ОШИБКА импорта app: {e}")
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
+# Импорт приложения
+print("📦 Импортируем app...", flush=True)
+from app import app
+print("✅ app импортирован", flush=True)
 
-# Запускаем сервер
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    print(f"🌐 Запуск uvicorn на порту {port}...")
-    
-    try:
-        uvicorn.run(
-            app,  # Передаём объект напрямую, не строку!
-            host="0.0.0.0",
-            port=port,
-            log_level="info",
-        )
-    except Exception as e:
-        print(f"❌ ОШИБКА запуска uvicorn: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+# Получаем порт
+port = int(os.environ.get("PORT", 8000))
+print(f"🌐 Запускаем сервер на 0.0.0.0:{port}", flush=True)
+
+# ЗАПУСКАЕМ СЕРВЕР БЕЗ УСЛОВИЯ IF!
+uvicorn.run(
+    app,
+    host="0.0.0.0",
+    port=port,
+    log_level="info",
+)
