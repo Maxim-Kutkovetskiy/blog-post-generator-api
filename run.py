@@ -1,36 +1,36 @@
 """
-Скрипт запуска для Koyeb - БЕЗ условия if __name__
+Скрипт запуска для Koyeb - чистый ASCII вывод
 """
 import os
 import sys
 
-# Отключаем буферизацию вывода
-sys.stdout.reconfigure(line_buffering=True)
+# Принудительно устанавливаем UTF-8
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass  # Python < 3.7
 
-print("=" * 50, flush=True)
-print("🚀 RUN.PY ЗАПУЩЕН!", flush=True)
-print(f"📍 Python: {sys.version}", flush=True)
-print(f"📍 CWD: {os.getcwd()}", flush=True)
-print(f"📍 PORT: {os.environ.get('PORT', 'NOT SET')}", flush=True)
-print(f"📍 OPENAI_API_KEY: {'SET' if os.environ.get('OPENAI_API_KEY') else 'NOT SET'}", flush=True)
-print(f"📍 CURRENTS_API_KEY: {'SET' if os.environ.get('CURRENTS_API_KEY') else 'NOT SET'}", flush=True)
-print("=" * 50, flush=True)
+print("=" * 50)
+print("[START] RUN.PY STARTED!")
+print("[INFO] Python: {}".format(sys.version.split()[0]))
+print("[INFO] CWD: {}".format(os.getcwd()))
+print("[INFO] PORT: {}".format(os.environ.get('PORT', 'NOT SET')))
+print("[INFO] OPENAI_API_KEY: {}".format('SET' if os.environ.get('OPENAI_API_KEY') else 'NOT SET'))
+print("[INFO] CURRENTS_API_KEY: {}".format('SET' if os.environ.get('CURRENTS_API_KEY') else 'NOT SET'))
+print("=" * 50)
 
-# Импорт uvicorn
-print("📦 Импортируем uvicorn...", flush=True)
+print("[STEP] Importing uvicorn...")
 import uvicorn
-print("✅ uvicorn импортирован", flush=True)
+print("[OK] uvicorn imported")
 
-# Импорт приложения
-print("📦 Импортируем app...", flush=True)
+print("[STEP] Importing app...")
 from app import app
-print("✅ app импортирован", flush=True)
+print("[OK] app imported")
 
-# Получаем порт
 port = int(os.environ.get("PORT", 8000))
-print(f"🌐 Запускаем сервер на 0.0.0.0:{port}", flush=True)
+print("[RUN] Starting server on 0.0.0.0:{}".format(port))
 
-# ЗАПУСКАЕМ СЕРВЕР БЕЗ УСЛОВИЯ IF!
 uvicorn.run(
     app,
     host="0.0.0.0",

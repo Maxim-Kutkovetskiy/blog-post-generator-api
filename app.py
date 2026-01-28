@@ -33,11 +33,11 @@ try:
     # Загружаем только если файл существует
     if os.path.exists('.env'):
         load_dotenv()
-        logger.info("📁 Загружены переменные из .env (локальная разработка)")
+        logger.info("[LOCAL] Загружены переменные из .env (локальная разработка)")
     else:
-        logger.info("☁️ Используем переменные окружения (production)")
+        logger.info("[PROD] Используем переменные окружения (production)")
 except ImportError:
-    logger.info("☁️ python-dotenv не установлен, используем системные переменные")
+    logger.info("[PROD] python-dotenv не установлен, используем системные переменные")
 
 # ============================================================================
 # ИМПОРТЫ (ПОСЛЕ НАСТРОЙКИ ЛОГОВ!)
@@ -71,7 +71,7 @@ class Settings:
         """Проверяет наличие обязательных переменных."""
         if self._validated:
             return
-            
+
         missing_keys = []
 
         if not self.openai_api_key:
@@ -82,11 +82,11 @@ class Settings:
 
         if missing_keys:
             error_message = f"Отсутствуют переменные: {', '.join(missing_keys)}"
-            logger.error(f"❌ {error_message}")
+            logger.error(f"[ERROR] {error_message}")
             raise ValueError(error_message)
 
         self._validated = True
-        logger.info("✅ Все переменные окружения загружены")
+        logger.info("[OK] Все переменные окружения загружены")
 
     def is_configured(self) -> bool:
         """Проверяет, настроено ли приложение."""
@@ -170,27 +170,27 @@ async def lifespan(app: FastAPI):
     Заменяет устаревшие @app.on_event("startup") и @app.on_event("shutdown")
     """
     global openai_client
-    
+
     # === STARTUP ===
-    logger.info("🚀 Запуск Content Generation API...")
-    logger.info(f"📌 Порт: {settings.port}")
-    logger.info(f"🤖 Модель OpenAI: {settings.openai_model}")
-    
+    logger.info("[START] Запуск Content Generation API...")
+    logger.info(f"[INFO] Порт: {settings.port}")
+    logger.info(f"[AI] Модель OpenAI: {settings.openai_model}")
+
     try:
         settings.validate()
         openai_client = OpenAI(api_key=settings.openai_api_key)
-        logger.info("✅ OpenAI клиент инициализирован")
+        logger.info("[OK] OpenAI клиент инициализирован")
     except ValueError as e:
-        logger.error(f"❌ Ошибка конфигурации: {e}")
-        logger.warning("⚠️ Генерация контента недоступна!")
-    
-    logger.info("✅ Приложение запущено!")
-    
+        logger.error(f"[ERROR] Ошибка конфигурации: {e}")
+        logger.warning("[WARN] Генерация контента недоступна!")
+
+    logger.info("[OK] Приложение запущено!")
+
     yield  # Приложение работает
-    
+
     # === SHUTDOWN ===
-    logger.info("🛑 Остановка Content Generation API...")
-    logger.info("✅ Приложение остановлено!")
+    logger.info("[STOP] Остановка Content Generation API...")
+    logger.info("[OK] Приложение остановлено!")
 
 
 # ============================================================================
@@ -203,10 +203,10 @@ app = FastAPI(
     ## API для автоматической генерации контента
     
     ### Возможности:
-    * 📰 Получение актуальных новостей по теме
-    * ✍️ Генерация SEO-заголовков
-    * 📝 Создание мета-описаний
-    * 📄 Генерация статей с GPT-4
+    * [NEWS] Получение актуальных новостей по теме
+    * [GEN] Генерация SEO-заголовков
+    * [META] Создание мета-описаний
+    * [ARTICLE] Генерация статей с GPT-4
     
     ### Версия: 1.2.0
     """,
@@ -235,14 +235,14 @@ def get_current_timestamp() -> str:
 def get_openai_client() -> OpenAI:
     """Возвращает OpenAI клиент с проверкой."""
     global openai_client
-    
+
     if openai_client is None:
-        logger.error("❌ OpenAI клиент не инициализирован")
+        logger.error("[ERROR] OpenAI клиент не инициализирован")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Сервис не настроен. Проверьте API ключи."
         )
-    
+
     return openai_client
 
 
@@ -252,7 +252,7 @@ def get_recent_news(
     max_count: int = 5
 ) -> tuple[str, List[str]]:
     """Получает новости по теме из Currents API."""
-    logger.info(f"🔍 Поиск новостей: '{topic}' (язык: {language})")
+    logger.info(f"[SEARCH] Поиск новостей: '{topic}' (язык: {language})")
 
     params = {
         "language": language,
@@ -268,7 +268,7 @@ def get_recent_news(
         )
 
         if response.status_code != 200:
-            logger.error(f"❌ Currents API: {response.status_code}")
+            logger.error(f"[ERROR] Currents API: {response.status_code}")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=f"Ошибка новостного API: {response.text}"
@@ -278,7 +278,7 @@ def get_recent_news(
         news_articles = data.get("news", [])
 
         if not news_articles:
-            logger.warning(f"⚠️ Новости по '{topic}' не найдены")
+            logger.warning(f"[WARN] Новости по '{topic}' не найдены")
             return "Свежих новостей не найдено.", []
 
         news_articles = news_articles[:max_count]
@@ -289,18 +289,18 @@ def get_recent_news(
             for a in news_articles
         ])
 
-        logger.info(f"✅ Найдено {len(titles)} новостей")
+        logger.info(f"[OK] Найдено {len(titles)} новостей")
         return news_context, titles
 
     except requests.exceptions.Timeout:
-        logger.error("❌ Таймаут Currents API")
+        logger.error("[ERROR] Таймаут Currents API")
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Таймаут новостного сервиса"
         )
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"❌ Ошибка сети: {e}")
+        logger.error(f"[ERROR] Ошибка сети: {e}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Ошибка соединения: {e}"
@@ -309,7 +309,7 @@ def get_recent_news(
 
 def generate_title(topic: str, news_context: str) -> str:
     """Генерирует заголовок статьи."""
-    logger.info(f"📝 Генерация заголовка: '{topic}'")
+    logger.info(f"[GEN] Генерация заголовка: '{topic}'")
 
     client = get_openai_client()
 
@@ -333,13 +333,13 @@ def generate_title(topic: str, news_context: str) -> str:
     )
 
     title = response.choices[0].message.content.strip().strip('"\'«»')
-    logger.info(f"✅ Заголовок: '{title}'")
+    logger.info(f"[OK] Заголовок: '{title}'")
     return title
 
 
 def generate_meta_description(title: str, topic: str) -> str:
     """Генерирует мета-описание."""
-    logger.info(f"📋 Генерация мета-описания")
+    logger.info(f"[META] Генерация мета-описания")
 
     client = get_openai_client()
 
@@ -363,13 +363,13 @@ def generate_meta_description(title: str, topic: str) -> str:
     )
 
     meta = response.choices[0].message.content.strip().strip('"\'«»')
-    logger.info(f"✅ Мета-описание ({len(meta)} символов)")
+    logger.info(f"[OK] Мета-описание ({len(meta)} символов)")
     return meta
 
 
 def generate_article_content(topic: str, title: str, news_context: str) -> str:
     """Генерирует текст статьи."""
-    logger.info(f"📄 Генерация статьи: '{topic}'")
+    logger.info(f"[ARTICLE] Генерация статьи: '{topic}'")
 
     client = get_openai_client()
 
@@ -396,13 +396,13 @@ def generate_article_content(topic: str, title: str, news_context: str) -> str:
     )
 
     content = response.choices[0].message.content.strip()
-    logger.info(f"✅ Статья ({len(content)} символов)")
+    logger.info(f"[OK] Статья ({len(content)} символов)")
     return content
 
 
 def generate_content(topic: str, language: str = "en", max_news: int = 5) -> GeneratedContent:
     """Основная функция генерации контента."""
-    logger.info(f"🚀 Генерация контента: '{topic}'")
+    logger.info(f"[START] Генерация контента: '{topic}'")
 
     try:
         news_context, news_titles = get_recent_news(topic, language, max_news)
@@ -422,7 +422,7 @@ def generate_content(topic: str, language: str = "en", max_news: int = 5) -> Gen
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ Ошибка: {e}", exc_info=True)
+        logger.error(f"[ERROR] Ошибка: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка генерации: {e}"
@@ -464,7 +464,7 @@ async def heartbeat() -> dict:
 @app.post("/generate-post", response_model=GeneratedContent, tags=["Content"])
 async def generate_post_api(request: TopicRequest) -> GeneratedContent:
     """Генерирует контент по теме."""
-    logger.info(f"📨 Запрос: '{request.topic}'")
+    logger.info(f"[REQUEST] Запрос: '{request.topic}'")
 
     if not request.topic.strip():
         raise HTTPException(
@@ -513,7 +513,7 @@ async def http_exception_handler(request, exc: HTTPException):
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc: Exception):
     """Обработчик всех ошибок."""
-    logger.error(f"❌ Ошибка: {exc}", exc_info=True)
+    logger.error(f"[ERROR] Ошибка: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
         content={

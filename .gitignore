@@ -50,3 +50,9 @@ generated_article_*.md
 # OS
 .DS_Store
 Thumbs.db
+
+# Тестовые файлы с ключами (НЕ заливать на GitHub!)
+test_koyeb_simulation.py
+test_currents_api.py
+check_encoding.py
+.env.backup_test
