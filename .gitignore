@@ -48,6 +48,7 @@ article_*.md
 generated_article_*.md
 
 # OS
+
 .DS_Store
 Thumbs.db
 
